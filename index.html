@@ -48,14 +48,14 @@
 </g></svg></div><p class="muted">The preview is an illustration of the arm style in your reference. The real arm moves only when its servos and firmware are connected and configured.</p></section>
 <section class="panel"><h2>Movement controls</h2><div id="controls"></div></section>
 <section class="panel"><h2>Quick actions</h2><div class="row"><button data-p="home">Home position</button><button data-p="grab">Close claw</button><button data-p="release">Open claw</button></div></section>
-<section class="panel"><h2>Bluetooth connection</h2><p>This page expects a nearby BLE device named <b>RobotArm</b> and the service/characteristic UUIDs configured in the page.</p><p>Web Bluetooth requires HTTPS and a supported browser. The five values are sent in this order: base, shoulder, elbow, wrist, gripper.</p></section>
+<section class="panel"><h2>Bluetooth connection</h2><p>This page expects a nearby BLE device named <b>RobotArm</b> and the service/characteristic UUIDs configured in the page.</p><p>Web Bluetooth requires HTTPS and a supported browser. The five values are sent in this order: base rotation (0–360°), shoulder, elbow, wrist, gripper. A full 360° physical turn requires a base mechanism designed for continuous rotation; an ordinary 180° servo cannot do a full turn.</p></section>
 </div></main>
 <script>
-const names=["Base rotation","Shoulder","Elbow","Wrist","Gripper"],angles=[90,90,90,90,20];
+const names=["Base rotation (360°)","Shoulder","Elbow","Wrist","Gripper"],angles=[180,90,90,90,20];
 const serviceId="12345678-1234-5678-1234-56789abcdef0",charId="12345678-1234-5678-1234-56789abcdef1";let device=null,ch=null,timer=null;
 const controls=document.getElementById("controls"),status=document.getElementById("status");
 function updateArm(){
-document.getElementById("baseTurn").setAttribute("transform","rotate("+(angles[0]-90)*.65+" 170 354)");
+document.getElementById("baseTurn").setAttribute("transform","rotate("+(angles[0]-180)+" 170 354)");
 document.getElementById("shoulder").setAttribute("transform","translate(170 310) rotate("+(angles[1]-90)*.55+")");
 document.getElementById("upperArm").setAttribute("transform","translate(0 -2) rotate("+(angles[1]-90)*.35+")");
 document.getElementById("elbow").setAttribute("transform","translate(0 -128) rotate("+(angles[2]-90)*.65+")");
@@ -65,9 +65,9 @@ const gap=angles[4]/180*28;
 document.getElementById("jawLeft").setAttribute("transform","translate(-11 -25) rotate("+(angles[4]*.45)+")");
 document.getElementById("jawRight").setAttribute("transform","translate(11 -25) rotate("+(-angles[4]*.45)+")");
 }
-function draw(){controls.innerHTML="";names.forEach((n,i)=>{let d=document.createElement("div");d.className="joint";d.innerHTML='<div><b>'+n+'</b><input type="range" min="0" max="180" value="'+angles[i]+'" aria-label="'+n+' angle"><small class="muted">0° — 180°</small></div><div class="deg">'+angles[i]+'°</div>';let s=d.querySelector("input"),v=d.querySelector(".deg");s.addEventListener("input",()=>{angles[i]=+s.value;v.textContent=angles[i]+'°';updateArm();send()});controls.appendChild(d)});updateArm()}
+function draw(){controls.innerHTML="";names.forEach((n,i)=>{let d=document.createElement("div");d.className="joint";d.innerHTML='<div><b>'+n+'</b><input type="range" min="0" max="'+(i===0?360:180)+'" value="'+angles[i]+'" aria-label="'+n+' angle"><small class="muted">0° — '+(i===0?360:180)+'°</small></div><div class="deg">'+angles[i]+'°</div>';let s=d.querySelector("input"),v=d.querySelector(".deg");s.addEventListener("input",()=>{angles[i]=+s.value;v.textContent=angles[i]+'°';updateArm();send()});controls.appendChild(d)});updateArm()}
 function send(){if(!ch)return;clearTimeout(timer);timer=setTimeout(async()=>{try{await ch.writeValue(new TextEncoder().encode(angles.join(",")+"\n"));status.textContent="Connected · arm positions sent"}catch(e){status.textContent="Could not send: "+e.message}},40)}
 document.getElementById("connect").onclick=async()=>{try{if(!navigator.bluetooth)throw Error("Web Bluetooth is not supported in this browser.");device=await navigator.bluetooth.requestDevice({filters:[{name:"RobotArm"}],optionalServices:[serviceId]});device.addEventListener("gattserverdisconnected",()=>{ch=null;document.getElementById("connect").disabled=false;document.getElementById("disconnect").disabled=true;status.textContent="Disconnected"});let server=await device.gatt.connect();ch=await(await server.getPrimaryService(serviceId)).getCharacteristic(charId);document.getElementById("connect").disabled=true;document.getElementById("disconnect").disabled=false;status.textContent="Connected to "+device.name;send()}catch(e){status.textContent="Connection failed: "+e.message}};
 document.getElementById("disconnect").onclick=()=>{if(device?.gatt?.connected)device.gatt.disconnect()};
-document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{let p={home:[90,90,90,90,20],grab:[90,90,90,90,160],release:[90,90,90,90,0]}[b.dataset.p];p.forEach((x,i)=>angles[i]=x);draw();send()});draw();
+document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{let p={home:[180,90,90,90,20],grab:[180,90,90,90,160],release:[180,90,90,90,0]}[b.dataset.p];p.forEach((x,i)=>angles[i]=x);draw();send()});draw();
 </script></body></html>
