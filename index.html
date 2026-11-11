@@ -14,7 +14,7 @@
 <filter id="shadow" x="-40%" y="-30%" width="180%" height="180%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000" flood-opacity=".45"/></filter>
 </defs>
 <text x="170" y="24" text-anchor="middle" class="label">7-AXIS ROBOTIC ARM • LIVE PREVIEW</text>
-<g filter="url(#shadow)">
+<g filter="url(#shadow)" id="armAssembly">
 <!-- fixed pedestal -->
 <ellipse cx="170" cy="400" rx="92" ry="19" fill="#dce5ed" stroke="#9bb0c5" stroke-width="3"/>
 <path d="M91 365 Q91 350 108 350 H232 Q249 350 249 365 L240 397 H100Z" class="white"/>
@@ -55,12 +55,12 @@ let port=null,writer=null,timer=null;
 const controls=document.getElementById("controls"),status=document.getElementById("status");
 function updateArm(){
 const reach=angles[5];
-const reachScale=0.78+(reach/100)*0.44;
-const reachShift=(reach-50)*0.65;
+const reachShift=(reach-50)*0.9;
 const tiltScale=1-Math.abs(angles[6])*0.0025;
 const tiltShift=angles[6]*0.32;
 document.getElementById("baseTurn").setAttribute("transform","translate("+tiltShift+" 0) translate(170 354) scale(1,"+tiltScale+") translate(-170 -354) rotate("+(angles[0]-180)+" 170 354)");
-document.getElementById("shoulder").setAttribute("transform","translate(170 310) translate("+reachShift+" 0) scale("+reachScale+") rotate("+(angles[1]-90)*.55+")");
+document.getElementById("armAssembly").setAttribute("transform","translate("+reachShift+" 0)");
+document.getElementById("shoulder").setAttribute("transform","translate(170 310) rotate("+(angles[1]-90)*.55+")");
 document.getElementById("upperArm").setAttribute("transform","translate(0 -2) rotate("+(angles[1]-90)*.35+")");
 document.getElementById("elbow").setAttribute("transform","translate(0 -128) rotate("+(angles[2]-90)*.65+")");
 document.getElementById("forearm").setAttribute("transform","rotate("+(angles[2]-90)*.45+")");
