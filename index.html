@@ -87,7 +87,7 @@ draw();
 let armZoom=1;
 const zoomTools=document.getElementById("zoomTools");
 const zoomLevel=document.getElementById("zoomLevel");
-function setArmZoom(next){armZoom=Math.max(0.7,Math.min(2.5,Math.round(next*10)/10));armPreview.style.setProperty("--arm-zoom",armZoom);zoomLevel.textContent=Math.round(armZoom*100)+"%";document.getElementById("zoomOut").disabled=armZoom<=0.7;document.getElementById("zoomIn").disabled=armZoom>=2.5}
+function setArmZoom(next){armZoom=Math.max(0.1,Math.min(2.5,Math.round(next*10)/10));armPreview.style.setProperty("--arm-zoom",armZoom);zoomLevel.textContent=Math.round(armZoom*100)+"%";document.getElementById("zoomOut").disabled=armZoom<=0.1;document.getElementById("zoomIn").disabled=armZoom>=2.5}
 document.getElementById("zoomIn").onclick=()=>setArmZoom(armZoom+0.1);
 document.getElementById("zoomOut").onclick=()=>setArmZoom(armZoom-0.1);
 document.getElementById("zoomReset").onclick=()=>setArmZoom(1);
