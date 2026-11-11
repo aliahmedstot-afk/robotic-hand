@@ -54,11 +54,13 @@ const names=["Base rotation (360°)","Shoulder","Elbow","Wrist","Gripper","Forwa
 let port=null,writer=null,timer=null;
 const controls=document.getElementById("controls"),status=document.getElementById("status");
 function updateArm(){
-const depthScale=0.88+(angles[5]/100)*0.24;
+const reach=angles[5];
+const reachScale=0.78+(reach/100)*0.44;
+const reachShift=(reach-50)*0.65;
 const tiltScale=1-Math.abs(angles[6])*0.0025;
 const tiltShift=angles[6]*0.32;
-document.getElementById("baseTurn").setAttribute("transform","translate("+tiltShift+" 0) translate(170 354) scale(1,"+tiltScale+") translate(-170 -354) translate(170 354) scale("+depthScale+") translate(-170 -354) rotate("+(angles[0]-180)+" 170 354)");
-document.getElementById("shoulder").setAttribute("transform","translate(170 310) rotate("+(angles[1]-90)*.55+")");
+document.getElementById("baseTurn").setAttribute("transform","translate("+tiltShift+" 0) translate(170 354) scale(1,"+tiltScale+") translate(-170 -354) rotate("+(angles[0]-180)+" 170 354)");
+document.getElementById("shoulder").setAttribute("transform","translate(170 310) translate("+reachShift+" 0) scale("+reachScale+") rotate("+(angles[1]-90)*.55+")");
 document.getElementById("upperArm").setAttribute("transform","translate(0 -2) rotate("+(angles[1]-90)*.35+")");
 document.getElementById("elbow").setAttribute("transform","translate(0 -128) rotate("+(angles[2]-90)*.65+")");
 document.getElementById("forearm").setAttribute("transform","rotate("+(angles[2]-90)*.45+")");
