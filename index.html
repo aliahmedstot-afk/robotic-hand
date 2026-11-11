@@ -26,7 +26,7 @@
 <path d="M-29 8 L-23 -26 Q0 -48 23 -26 L29 8Z" class="blue"/>
 <circle r="22" class="blue"/><circle r="9" class="joint-dot"/>
 <!-- upper arm -->
-<g id="upperArm" transform="translate(0 -2) rotate(-28)">
+<g id="armPivot"><g id="upperArm" transform="translate(0 -2) rotate(-28)">
 <path d="M-20 0 Q-26 -10 -18 -25 L-13 -119 Q-11 -134 0 -135 Q11 -134 13 -119 L18 -25 Q26 -10 20 0Z" class="blue"/>
 <path d="M-8 -28 L-6 -112 Q0 -120 6 -112 L8 -28Z" fill="#5bb7ff" opacity=".35"/>
 <g id="elbow" transform="translate(0 -128)">
@@ -50,16 +50,13 @@
 <section class="panel"><h2>USB connection · Arduino Uno</h2><p>Connect your Arduino Uno to your computer with a USB data cable, then press <b>Connect USB</b> and choose the Arduino serial port.</p><p class="hint">The page sends seven comma-separated values followed by a new line, at <b>9600 baud</b>: base, shoulder, elbow, wrist, gripper, reach, forward tilt. Your Arduino sketch must read this format and control the matching motors. The new reach axis needs a real linear actuator or suitable slide mechanism to move the arm forward and backward.</p><p class="hint">USB serial in a browser requires HTTPS and a browser that supports Web Serial, such as desktop Chrome or Edge. Some phones and browsers do not support it.</p><p class="hint muted">Test with the arm safely supported, clear of people and objects. A full 360° base turn needs a suitable rotating mechanism; an ordinary 180° servo cannot make a full turn.</p></section>
 </div></main>
 <script>
-const names=["Base rotation (360°)","Shoulder","Elbow","Wrist","Gripper","Forward / backward reach","Forward / backward tilt"],angles=[180,90,90,90,20,50,0];
+const names=["Base rotation (360°)","Shoulder","Elbow","Wrist","Gripper","Whole-arm forward / backward tilt","Fine forward / backward tilt"],angles=[180,90,90,90,20,50,0];
 let port=null,writer=null,timer=null;
 const controls=document.getElementById("controls"),status=document.getElementById("status");
 function updateArm(){
-const reach=angles[5];
-const reachShift=(reach-50)*0.9;
-const tiltScale=1-Math.abs(angles[6])*0.0025;
-const tiltShift=angles[6]*0.32;
-document.getElementById("baseTurn").setAttribute("transform","translate("+tiltShift+" 0) translate(170 354) scale(1,"+tiltScale+") translate(-170 -354) rotate("+(angles[0]-180)+" 170 354)");
-document.getElementById("armAssembly").setAttribute("transform","translate("+reachShift+" 0)");
+const wholeArmTilt=(angles[5]-50)*0.55+angles[6]*0.45;
+document.getElementById("baseTurn").setAttribute("transform","rotate("+(angles[0]-180)+" 170 354)");
+document.getElementById("armPivot").setAttribute("transform","rotate("+wholeArmTilt+")");
 document.getElementById("shoulder").setAttribute("transform","translate(170 310) rotate("+(angles[1]-90)*.55+")");
 document.getElementById("upperArm").setAttribute("transform","translate(0 -2) rotate("+(angles[1]-90)*.35+")");
 document.getElementById("elbow").setAttribute("transform","translate(0 -128) rotate("+(angles[2]-90)*.65+")");
