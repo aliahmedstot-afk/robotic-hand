@@ -23,7 +23,7 @@ main{max-width:1180px}
 .preview h2,.movement-panel h2{display:flex;align-items:center;gap:9px}
 .preview h2:before,.movement-panel h2:before{content:"";width:4px;height:20px;background:#36a9ff;border-radius:5px}
 .arm-wrap{background:radial-gradient(ellipse at 50% 42%,#244968 0%,#10243a 66%,#0b1725 100%);border-color:#355875}
-.movement-panel{padding:16px}
+.movement-panel{padding:16px}\n.animation-panel{border-color:#34709b;background:linear-gradient(145deg,#142f47,#0b1b2b)}.animation-panel h2{display:flex;align-items:center;gap:9px}.animation-panel h2:before{content:"";width:4px;height:20px;background:#36a9ff;border-radius:5px}
 .movement-panel .joint{background:linear-gradient(90deg,#ffffff05,transparent);border-bottom-color:#2b4258}
 .movement-panel .joint b{letter-spacing:.01em}
 .movement-panel .deg{border:1px solid #31516c;background:#102941;color:#a9dcff;font-variant-numeric:tabular-nums}
@@ -82,6 +82,7 @@ button.secondary{border:1px solid #3b5873}
 <g id="jawRight" transform="translate(11 -25)"><path d="M0 0 Q13 -8 20 -25 L28 -58 Q30 -68 22 -72 Q14 -75 10 -65 L-2 -35 Q-12 -17 -10 -5Z" class="white"/><path d="M24 -64 L17 -40" stroke="#71869a" stroke-width="4" stroke-linecap="round"/></g>
 </g></g></g></g></g></g>
 </g></svg></div><p class="muted hint">Preview only: the illustration shows the requested arm style. Actual movement depends on your motor hardware and matching controller firmware.</p></section>
+<section class="panel animation-panel"><h2>Automatic motion demo</h2><p class="hint muted">Watch a complete pick-and-place animation: reach, close the claw, lift, carry, release, and return. This demo animates the on-screen preview only; it does not send automatic movement commands to your motors.</p><div class="row"><button id="playDemo">▶ Play pick-and-place</button><button class="secondary" id="stopDemo" disabled>■ Stop</button><span class="hint muted" id="demoStatus" aria-live="polite">Ready · preview animation</span></div></section>
 <section class="panel movement-panel"><h2>Movement controls</h2><div id="controls"></div><div class="divider"></div><h3>USB command monitor</h3><p class="hint muted">This is the exact seven-number line the website sends to the Uno (9600 baud).</p><div class="row" style="align-items:center"><code id="packetPreview" style="display:block;flex:1;min-width:180px;padding:12px;background:#071321;border:1px solid #29435e;border-radius:9px;color:#9ed5ff;overflow-wrap:anywhere">180,90,90,90,20</code><button class="secondary" id="copyPacket">Copy command</button></div><p class="hint muted" id="copyStatus">Use this to check the serial format when setting up your Arduino sketch.</p></section>
 <section class="panel"><h2>Quick actions</h2><div class="row"><button data-p="home">⌂ Home position</button><button data-p="grab">Close claw</button><button data-p="release">Open claw</button><button class="secondary" id="center">Center all joints</button></div><div class="divider"></div><h3>My saved pose</h3><div class="row"><button class="secondary" id="savePose">Save current pose</button><button class="secondary" id="loadPose">Load saved pose</button></div><p class="hint muted" id="poseStatus">Save a favorite position in this browser. It will still be here next time you visit.</p></section>
 <section class="panel"><h2>USB connection · Arduino Uno</h2><p>Connect your Arduino Uno to your computer with a USB data cable, then press <b>Connect USB</b> and choose the Arduino serial port.</p><p class="hint">The page sends seven comma-separated values followed by a new line, at <b>9600 baud</b>: base, shoulder, elbow, wrist, gripper, reach, forward tilt. Your Arduino sketch must read this format and control the matching motors. The new reach axis needs a real linear actuator or suitable slide mechanism to move the arm forward and backward.</p><p class="hint">USB serial in a browser requires HTTPS and a browser that supports Web Serial, such as desktop Chrome or Edge. Some phones and browsers do not support it.</p><p class="hint muted">Test with the arm safely supported, clear of people and objects. Base rotation is limited to 130°; shoulder, elbow, wrist and gripper are limited to 90° (gripper max 37°); fine tilt ranges from -90° to +90°. Check that your motors and mechanical joints support the selected range.</p></section>
@@ -108,6 +109,52 @@ function draw(){controls.innerHTML="";const groups=[{at:0,label:"01 · Base axis
 function send(){if(!writer)return;clearTimeout(timer);timer=setTimeout(async()=>{try{await writer.write(new TextEncoder().encode(angles.join(",")+"\n"));setStatus("USB connected · arm positions sent",true)}catch(e){setStatus("USB send error: "+e.message,false)}},40)}
 document.getElementById("connect").onclick=async()=>{try{if(!("serial" in navigator))throw Error("Web Serial is not available here. Try desktop Chrome or Edge over HTTPS.");port=await navigator.serial.requestPort();await port.open({baudRate:9600});if(!port.writable)throw Error("The selected serial port is not writable.");writer=port.writable.getWriter();document.getElementById("connect").disabled=true;document.getElementById("disconnect").disabled=false;setStatus("USB connected · Arduino Uno ready",true);send()}catch(e){if(port){try{await port.close()}catch(_){}}port=null;writer=null;setStatus("USB connection failed: "+e.message,false)}};
 document.getElementById("disconnect").onclick=async()=>{try{if(writer){writer.releaseLock();writer=null}if(port){await port.close();port=null}document.getElementById("connect").disabled=false;document.getElementById("disconnect").disabled=true;setStatus("USB disconnected · slider positions are kept",false)}catch(e){setStatus("USB disconnect error: "+e.message,false)}};
+// Preview-only automatic pick-and-place animation. It never writes to USB.
+let demoToken=0, demoRunning=false;
+const playDemoButton=document.getElementById("playDemo");
+const stopDemoButton=document.getElementById("stopDemo");
+const demoStatus=document.getElementById("demoStatus");
+const wait=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
+function setDemoState(running,message){demoRunning=running;playDemoButton.disabled=running;stopDemoButton.disabled=!running;demoStatus.textContent=message}
+function animatePose(target,duration,token){
+ return new Promise(resolve=>{
+  const start=angles.slice(),begin=performance.now();
+  function frame(now){
+   if(token!==demoToken){resolve();return}
+   const t=Math.min(1,(now-begin)/duration),eased=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+   for(let i=0;i<7;i++) angles[i]=start[i]+(target[i]-start[i])*eased;
+   updateArm();updatePacketPreview();
+   if(t<1) requestAnimationFrame(frame); else resolve();
+  }
+  requestAnimationFrame(frame);
+ });
+}
+async function runPickPlace(){
+ const token=++demoToken;
+ const steps=[
+  {pose:[65,65,58,50,0,45,0],label:"1/7 · Reaching toward the object"},
+  {pose:[65,65,58,50,37,45,0],label:"2/7 · Gripping the object"},
+  {pose:[65,43,48,55,37,45,0],label:"3/7 · Lifting"},
+  {pose:[100,43,48,55,37,45,0],label:"4/7 · Carrying to the drop-off"},
+  {pose:[100,65,58,50,37,45,0],label:"5/7 · Lowering"},
+  {pose:[100,65,58,50,0,45,0],label:"6/7 · Releasing"},
+  {pose:[65,90,90,90,20,45,0],label:"7/7 · Returning to home"}
+ ];
+ setDemoState(true,"Starting pick-and-place…");
+ for(const step of steps){
+  if(token!==demoToken)return;
+  demoStatus.textContent=step.label;
+  await animatePose(step.pose,950,token);
+  if(token!==demoToken)return;
+  await wait(280);
+ }
+ if(token===demoToken)setDemoState(false,"Complete · ready to play again");
+}
+playDemoButton.addEventListener("click",runPickPlace);
+stopDemoButton.addEventListener("click",()=>{
+ demoToken++;
+ setDemoState(false,"Stopped · current preview position kept");
+});
 function setStatus(message,online=false){status.textContent=message;document.getElementById("statusDot").classList.toggle("online",online);document.getElementById("linkReadout").textContent=online?"CONNECTED":"OFFLINE"}
 function applyPose(p){p.forEach((x,i)=>{const min=i===6?-90:0,max=i===0?130:(i===4?37:90);angles[i]=Math.max(min,Math.min(max,Number(x)||0))});draw();send()}
 document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{let p={home:[65,90,90,90,20,45,0],grab:[65,90,90,90,37,45,0],release:[65,90,90,90,0,45,0]}[b.dataset.p];applyPose(p)});
