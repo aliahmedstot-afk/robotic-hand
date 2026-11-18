@@ -50,7 +50,7 @@
 <section class="panel"><h2>USB connection · Arduino Uno</h2><p>Connect your Arduino Uno to your computer with a USB data cable, then press <b>Connect USB</b> and choose the Arduino serial port.</p><p class="hint">The page sends seven comma-separated values followed by a new line, at <b>9600 baud</b>: base, shoulder, elbow, wrist, gripper, reach, forward tilt. Your Arduino sketch must read this format and control the matching motors. The new reach axis needs a real linear actuator or suitable slide mechanism to move the arm forward and backward.</p><p class="hint">USB serial in a browser requires HTTPS and a browser that supports Web Serial, such as desktop Chrome or Edge. Some phones and browsers do not support it.</p><p class="hint muted">Test with the arm safely supported, clear of people and objects. All movement sliders are limited to 90° (the fine tilt axis ranges from -90° to +90°). Check that your motors and mechanical joints support the selected range.</p></section>
 </div></main>
 <script>
-const names=["Base rotation (90°)","Shoulder","Elbow","Wrist","Gripper (max 37°)","Whole-arm forward / backward tilt","Fine forward / backward tilt"],angles=[45,90,90,90,20,45,0];
+const names=["Base rotation (90°)","Shoulder","Elbow","Wrist","Gripper (0–37°)","Whole-arm forward / backward tilt","Fine forward / backward tilt"],angles=[45,90,90,90,20,45,0];
 let port=null,writer=null,timer=null;
 const controls=document.getElementById("controls"),status=document.getElementById("status");
 function updateArm(){
