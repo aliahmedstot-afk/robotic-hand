@@ -181,7 +181,7 @@ setArmZoom(1);
 // Keep a compact live arm preview on screen while the movement controls are being used.
 const movementPanel=controls.closest(".panel");
 const armPreview=document.querySelector(".arm-wrap");
-function syncFloatingPreview(){const r=movementPanel.getBoundingClientRect();const show=r.top<90&&r.bottom>130;armPreview.classList.toggle("floating",show);zoomTools.classList.toggle("floating-tools",show)}
+function syncFloatingPreview(){const r=movementPanel.getBoundingClientRect();const mobile=window.matchMedia("(max-width:759px)").matches;const show=mobile?(r.top<window.innerHeight&&r.bottom>120):(r.top<90&&r.bottom>130);armPreview.classList.toggle("floating",show);zoomTools.classList.toggle("floating-tools",show)}
 window.addEventListener("scroll",syncFloatingPreview,{passive:true});
 window.addEventListener("resize",syncFloatingPreview);syncFloatingPreview();
 </script></body></html>
