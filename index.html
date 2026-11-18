@@ -34,7 +34,12 @@ button.secondary{border:1px solid #3b5873}
 .divider{height:1px;background:#2b435a;margin:14px 0}
 @media(max-width:560px){.instrument-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.instrument{padding:10px}.instrument strong{font-size:19px}.toolbar{padding:14px}}
 
-</style></head><body><main>
+/* Mobile control mode: keep a wide, compact live arm preview visible above the sliders. */
+@media(max-width:759px){
+ .arm-wrap.floating{position:fixed;top:8px;left:50%;right:auto;transform:translateX(-50%);width:calc(100vw - 20px);height:116px;min-height:116px;z-index:9999;border:1px solid #65baff;border-radius:12px;padding:3px;background:linear-gradient(90deg,#10243aee,#1a3552ee);box-shadow:0 5px 18px #000a}
+ .arm-wrap.floating .arm-svg{width:auto;height:108px;max-height:108px;max-width:100%;transform:scale(.92)!important}
+ .zoom-tools.floating-tools{display:none}
+}</style></head><body><main>
 <div class="toolbar"><div><div class="eyebrow">USB SERIAL • ARDUINO UNO • 7 AXES</div><h1>🤖 Robotic Arm Controller</h1><p class="muted">Move the arm in every direction, save a pose, and preview each adjustment.</p></div><div class="row"><button id="connect">Connect USB</button><button class="secondary" id="disconnect" disabled>Disconnect</button></div></div><div class="statusline"><span class="dot" id="statusDot"></span><p id="status">Not connected · Plug your Arduino Uno into USB, then connect.</p></div>
 <div class="instrument-strip" aria-label="Arm status overview">
  <div class="instrument"><span>Degrees of freedom</span><strong>7 DOF</strong><em>Independent control axes</em></div>
