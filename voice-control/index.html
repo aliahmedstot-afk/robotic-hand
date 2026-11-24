@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Voice Control for Windows</title>
+<style>
+:root{color-scheme:dark;--bg:#08111f;--panel:#111e31;--line:#263953;--muted:#9aabc2;--blue:#63a5ff;--green:#50d6a0}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#142c4c,#08111f 60%);font:16px system-ui;color:#edf4ff;min-height:100vh;padding:28px 16px}
+main{max-width:850px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-size:clamp(28px,5vw,42px);margin:8px 0}p{color:var(--muted);line-height:1.55}.pill{border:1px solid var(--line);border-radius:99px;padding:7px 12px;color:var(--muted);font-size:13px}
+.card{background:#101d30eF;border:1px solid var(--line);border-radius:20px;padding:22px;margin-top:18px;box-shadow:0 14px 40px #0003}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}input{min-width:0;flex:1;background:#081525;border:1px solid var(--line);color:white;padding:13px 14px;border-radius:12px;font:inherit}
+button{border:0;border-radius:12px;padding:13px 17px;font:600 15px system-ui;cursor:pointer;background:#24446b;color:white}button.primary{background:var(--blue);color:#071426}button:disabled{opacity:.45;cursor:not-allowed}
+.mic{width:132px;height:132px;border-radius:50%;display:grid;place-items:center;margin:18px auto;background:linear-gradient(145deg,#5da6ff,#2762bd);box-shadow:0 0 0 12px #63a5ff18;font-size:46px}.mic.listening{background:linear-gradient(145deg,#ff7585,#b72c50);box-shadow:0 0 0 12px #ff758522}
+#heard{font-size:22px;color:#fff;min-height:34px;text-align:center;overflow-wrap:anywhere}.status{font-size:14px;color:var(--muted);text-align:center}.commands{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}.cmd{padding:12px;border:1px solid var(--line);border-radius:12px;background:#0b1728}.cmd b{display:block;font-size:14px}.cmd span{color:var(--muted);font-size:13px}
+small{color:var(--muted)}.warn{border-left:3px solid #f0b64f;padding-left:12px;color:#e8d6ad;font-size:14px}
+</style></head><body><main>
+<div class="top"><div class="pill">WINDOWS DESKTOP COMPANION</div><div class="pill" id="connection">Not connected</div></div>
+<h1>Talk to your laptop.</h1><p>Speak naturally. The page recognizes your words and sends approved actions to the small companion app running on your Windows laptop.</p>
+<section class="card">
+<h2 style="margin-top:0">Connect your laptop</h2>
+<p>Run <b>voice_assistant.py</b> on your laptop first. It will show a one-time pairing code.</p>
+<div class="row"><input id="pin" type="password" placeholder="Enter pairing code from the app" autocomplete="off"><button id="connect">Connect</button></div>
+<p class="status" id="connectStatus">The companion listens only on your own laptop (127.0.0.1).</p>
+</section>
+<section class="card" style="text-align:center">
+<h2 style="margin-top:0">Voice command</h2>
+<button class="mic" id="mic" aria-label="Start listening">🎙️</button>
+<div id="heard">Press the microphone and speak</div><div class="status" id="status">Waiting for microphone permission</div>
+<div class="row" style="justify-content:center;margin-top:16px"><button id="stop" disabled>Stop listening</button><button id="test">Test connection</button></div>
+</section>
+<section class="card"><h2 style="margin-top:0">Try saying</h2><div class="commands">
+<div class="cmd"><b>“Open Notepad”</b><span>Launch an approved app</span></div>
+<div class="cmd"><b>“Open Calculator”</b><span>Launch Calculator</span></div>
+<div class="cmd"><b>“Open File Explorer”</b><span>Open your files</span></div>
+<div class="cmd"><b>“Volume up” / “Volume down”</b><span>Adjust system volume</span></div>
+<div class="cmd"><b>“Switch window”</b><span>Move to another open window</span></div>
+<div class="cmd"><b>“Show desktop”</b><span>Minimize windows</span></div>
+<div class="cmd"><b>“Type hello there”</b><span>Type dictated text into the focused app</span></div>
+<div class="cmd"><b>“Scroll down” / “Scroll up”</b><span>Scroll the active window</span></div>
+<div class="cmd"><b>“Search for space facts”</b><span>Open a web search</span></div>
+</div></section>
+<section class="card"><p class="warn">Safety: this first version uses a limited list of commands. It does not delete files, run arbitrary terminal commands, install software, or change security settings. Check the recognized words before allowing an action. Use the microphone only when you intend to control the laptop.</p><small>Speech recognition works best in current Chrome or Edge. Keep the companion running while using this page.</small></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);let pin="",connected=false,recognition=null;
+function setStatus(s){$("status").textContent=s}
+async function send(command,extra={}){if(!connected)throw Error("Connect the Windows companion first.");const r=await fetch("http://127.0.0.1:8765/command",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+pin},body:JSON.stringify({command,...extra})});const j=await r.json();if(!r.ok||!j.ok)throw Error(j.message||"Command failed");return j.message}
+$("connect").onclick=async()=>{pin=$("pin").value.trim();if(!pin){$("connectStatus").textContent="Enter the pairing code first.";return}try{const msg=await send("ping");connected=true;$("connection").textContent="Connected";$("connectStatus").textContent=msg;$("connectStatus").style.color="#50d6a0"}catch(e){connected=false;$("connection").textContent="Not connected";$("connectStatus").textContent=e.message}};
+$("test").onclick=async()=>{try{$("status").textContent=await send("ping")}catch(e){$("status").textContent=e.message}};
+function mapSpeech(raw){const s=raw.trim();const x=s.toLowerCase().replace(/[.!?]/g,"");
+if(/^open (notepad|calculator|file explorer|explorer|chrome|edge|settings)$/.test(x))return {command:"open_app",app:x.replace("open ","")};
+if(["volume up","turn volume up","increase volume"].includes(x))return {command:"volume_up"};
+if(["volume down","turn volume down","decrease volume"].includes(x))return {command:"volume_down"};
+if(["mute","mute volume"].includes(x))return {command:"mute"};
+if(["switch window","next window"].includes(x))return {command:"switch_window"};
+if(["show desktop","minimize all windows"].includes(x))return {command:"show_desktop"};
+if(["scroll down","scroll up"].includes(x))return {command:x.replace(" ","_")};
+if(["press enter","enter"].includes(x))return {command:"press_enter"};
+if(x.startsWith("type "))return {command:"type_text",text:s.slice(5)};
+if(x.startsWith("search for "))return {command:"search_web",text:s.slice(11)};
+if(x==="close current window")return {command:"close_window"};
+return null}
+async function handleSpeech(raw){$("heard").textContent=raw;const action=mapSpeech(raw);if(!action){setStatus("I didn't recognize that command. Try one from the list.");return}
+if(action.command==="close_window"&&!confirm("Close the currently active window? Unsaved work could be lost.")){setStatus("Cancelled.");return}
+try{setStatus("Running: "+raw);setStatus(await send(action.command,action));}catch(e){setStatus(e.message)}}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){recognition=new SR();recognition.lang="en-US";recognition.interimResults=true;recognition.continuous=false;recognition.onstart=()=>{$("mic").classList.add("listening");$("stop").disabled=false;setStatus("Listening…")};recognition.onend=()=>{$("mic").classList.remove("listening");$("stop").disabled=true};recognition.onerror=e=>setStatus("Microphone error: "+e.error);recognition.onresult=e=>{let final="";let interim="";for(let i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript}if(interim)$("heard").textContent=interim;if(final)handleSpeech(final)};$("mic").onclick=()=>{try{recognition.start()}catch(e){setStatus("Already listening.")}};$("stop").onclick=()=>recognition.stop()}else{$("mic").disabled=true;setStatus("Speech recognition isn't supported here. Open this page in current Chrome or Edge.")}
+</script></body></html>
