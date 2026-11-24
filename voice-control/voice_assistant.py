@@ -80,18 +80,16 @@ def run_command(data):
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args): pass
-    def headers(self):
-        origin = self.headers_in.get("Origin", "")
+    def add_cors_headers(self):
+        origin = self.headers.get("Origin", "")
         if origin == ALLOWED_ORIGIN:
             self.send_header("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
             self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
     def do_OPTIONS(self):
-        self.headers_in = self.headers
-        self.send_response(204); self.headers(); self.end_headers()
+        self.send_response(204); self.add_cors_headers(); self.end_headers()
     def do_POST(self):
-        self.headers_in = self.headers
         origin = self.headers.get("Origin", "")
         if origin != ALLOWED_ORIGIN:
             self.send_error(403, "Website origin not allowed"); return
@@ -104,11 +102,11 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length).decode("utf-8"))
             message = run_command(data)
             body = json.dumps({"ok": True, "message": message}).encode()
-            self.send_response(200); self.headers(); self.send_header("Content-Type", "application/json")
+            self.send_response(200); self.add_cors_headers(); self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
         except Exception as e:
             body = json.dumps({"ok": False, "message": str(e)}).encode()
-            self.send_response(400); self.headers(); self.send_header("Content-Type", "application/json")
+            self.send_response(400); self.add_cors_headers(); self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
 
 if sys.platform != "win32":
