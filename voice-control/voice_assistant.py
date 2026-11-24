@@ -27,7 +27,7 @@ def type_text(text):
     class KEYBDINPUT(ctypes.Structure):
         _fields_ = [("wVk", ctypes.c_ushort), ("wScan", ctypes.c_ushort),
                     ("dwFlags", ctypes.c_ulong), ("time", ctypes.c_ulong),
-                    ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong))]
+                    ("dwExtraInfo", ctypes.c_size_t)]
     class INPUT_UNION(ctypes.Union):
         _fields_ = [("ki", KEYBDINPUT)]
     class INPUT(ctypes.Structure):
@@ -87,6 +87,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
             self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Private-Network", "true")
     def do_OPTIONS(self):
         self.send_response(204); self.add_cors_headers(); self.end_headers()
     def do_POST(self):
